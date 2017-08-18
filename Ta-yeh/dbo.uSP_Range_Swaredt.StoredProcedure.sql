@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Range_Swaredt]    Script Date: 08/18/2017 17:18:56 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Range_Swaredt]    Script Date: 08/18/2017 17:43:41 ******/
 DROP PROCEDURE [dbo].[uSP_Range_Swaredt]
 GO
 SET ANSI_NULLS ON

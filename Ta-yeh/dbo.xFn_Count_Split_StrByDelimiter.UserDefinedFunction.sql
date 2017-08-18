@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  UserDefinedFunction [dbo].[xFn_Count_Split_StrByDelimiter]    Script Date: 08/18/2017 17:18:57 ******/
+/****** Object:  UserDefinedFunction [dbo].[xFn_Count_Split_StrByDelimiter]    Script Date: 08/18/2017 17:43:41 ******/
 DROP FUNCTION [dbo].[xFn_Count_Split_StrByDelimiter]
 GO
 SET ANSI_NULLS ON

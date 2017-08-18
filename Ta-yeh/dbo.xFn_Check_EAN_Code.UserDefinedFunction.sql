@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  UserDefinedFunction [dbo].[xFn_Check_EAN_Code]    Script Date: 08/18/2017 17:18:57 ******/
+/****** Object:  UserDefinedFunction [dbo].[xFn_Check_EAN_Code]    Script Date: 08/18/2017 17:43:41 ******/
 DROP FUNCTION [dbo].[xFn_Check_EAN_Code]
 GO
 SET ANSI_NULLS ON

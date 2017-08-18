@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  UserDefinedFunction [dbo].[xRegexFind]    Script Date: 08/18/2017 17:18:57 ******/
+/****** Object:  UserDefinedFunction [dbo].[xRegexFind]    Script Date: 08/18/2017 17:43:41 ******/
 DROP FUNCTION [dbo].[xRegexFind]
 GO
 SET ANSI_NULLS ON

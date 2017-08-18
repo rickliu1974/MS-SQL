@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_ETL_ReIndexs2]    Script Date: 08/18/2017 17:18:56 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_ETL_ReIndexs2]    Script Date: 08/18/2017 17:43:39 ******/
 DROP PROCEDURE [dbo].[uSP_ETL_ReIndexs2]
 GO
 SET ANSI_NULLS ON

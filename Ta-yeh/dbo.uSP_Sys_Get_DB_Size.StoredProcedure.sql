@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Sys_Get_DB_Size]    Script Date: 08/18/2017 17:18:56 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Sys_Get_DB_Size]    Script Date: 08/18/2017 17:43:41 ******/
 DROP PROCEDURE [dbo].[uSP_Sys_Get_DB_Size]
 GO
 SET ANSI_NULLS ON

@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[xNew_uSP_ETL_Cust_WeekSale_Stock(201708°±¥Î)]    Script Date: 08/18/2017 17:18:56 ******/
+/****** Object:  StoredProcedure [dbo].[xNew_uSP_ETL_Cust_WeekSale_Stock(201708°±¥Î)]    Script Date: 08/18/2017 17:43:41 ******/
 DROP PROCEDURE [dbo].[xNew_uSP_ETL_Cust_WeekSale_Stock(201708°±¥Î)]
 GO
 SET ANSI_NULLS ON

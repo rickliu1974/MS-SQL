@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_EC_Order_PayEasy]    Script Date: 08/18/2017 17:18:56 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_EC_Order_PayEasy]    Script Date: 08/18/2017 17:43:40 ******/
 DROP PROCEDURE [dbo].[uSP_Imp_SCM_EC_Order_PayEasy]
 GO
 SET ANSI_NULLS ON

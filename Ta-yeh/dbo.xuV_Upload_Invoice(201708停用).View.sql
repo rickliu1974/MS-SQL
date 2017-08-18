@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  View [dbo].[xuV_Upload_Invoice(201708°±¥Î)]    Script Date: 08/18/2017 17:18:53 ******/
+/****** Object:  View [dbo].[xuV_Upload_Invoice(201708°±¥Î)]    Script Date: 08/18/2017 17:43:39 ******/
 DROP VIEW [dbo].[xuV_Upload_Invoice(201708°±¥Î)]
 GO
 SET ANSI_NULLS ON
