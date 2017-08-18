@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_Mall_Consign_Order_Car1]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_Mall_Consign_Order_Car1]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_Imp_SCM_Mall_Consign_Order_Car1]
 GO
 SET ANSI_NULLS ON
@@ -446,6 +446,61 @@ print '26'
           Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
 
           --*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*
+print '28'
+          set @Msg = '新增['+@sd_date+'] 日出貨退回明細。'
+          set @strSQL ='insert into TYEIPDBS2.lytdbta13.dbo.sslpdttmp '+@CR+
+                       '(sd_class, sd_slip_fg, sd_date, sd_no, sd_ctno, '+@CR+
+                       ' sd_skno, sd_name, sd_whno, sd_whno2, sd_qty, '+@CR+
+                       ' sd_price, sd_dis, sd_stot, sd_lotno, sd_unit, '+@CR+
+                       ' sd_unit_fg, sd_ave_p, sd_rate, sd_seqfld, sd_ordno '+@CR+
+                       ') '+@CR+
+                       'select '''+@sd_class+''' as sd_class, '+@CR+ -- 類別
+                       '       '''+@sd_slip_fg+''' sd_slip_fg, '+@CR+ -- 單據種類
+                       '       convert(datetime, '''+@sd_date+''') as sd_date, '+@CR+ -- 貨單日期
+                       '       d2.sd_no, '+@CR+ -- 貨單編號
+                       '       m.ct_no as sd_ctno, '+@CR+ -- 客戶編號
+                       ''+@CR+
+                       '       d.sk_no as sd_skno, '+@CR+ -- 貨品編號
+                       '       d.sk_name as sd_name, '+@CR+ -- 品名規格
+                       '       ''LB'' as sd_whno, '+@CR+ -- 倉庫(入)
+                       '       '''' as sd_whno2, '+@CR+ -- 倉庫(出)
+                       '       m.sale_qty as sd_qty, '+@CR+ -- 交易數量
+                       ''+@CR+
+                       '       m.sale_amt as sd_price, '+@CR+ -- 價格
+                       '       1 as sd_dis, '+@CR+ -- 折數
+                       '       m.sale_tot as sd_stot, '+@CR+ -- 小計
+                       --2013/5/3 為了抓取重複資料並回寫到備註內，所以改寫到 sd_lotno 此欄位目前似乎未使用，只好當作臨時備註使用
+                       --'       '''+@Rm+'於 ''+Convert(Varchar(20), Getdate(), 120)+char(13)+char(10)+'''+@KindName+@OD_CName +''' as sd_rem, '+@CR+ -- 備用欄位
+                       '       '''+@Rm+@KindName+@OD_CName +''' as sd_lotno, '+@CR+ -- 備用欄位
+                       '       d.sk_unit as sd_unit, '+@CR+ -- 單位
+                       ' '+@CR+
+                       '       0 as sd_unit_fg, '+@CR+ -- 單位旗標
+                       '       d.s_price4 as sd_ave_p, '+@CR+ -- 單位成本
+                       '       1 as sd_rate, '+@CR+ -- 匯率
+                       '       rowid as sd_seqfld, '+@CR+ -- 明細序號, 此序號會因為凌越修改而加以變更，所以另存一份到 sd_ordno
+                       '       rowid as sd_ordno'+@CR+ -- XLS 明細序號
+                       --'       row_number() over(order by m.ct_no, d.sk_no) as sd_seqfld '+@CR+
+                       '  from '+@TB_OD_Name+' m '+@CR+
+                       '       left join SYNC_TA13.dbo.sstock d '+@CR+
+                       '         on m.sk_no = d.sk_no '+@CR+
+                       '       left join SYNC_TA13.dbo.pcust d1 '+@CR+
+                       '         on m.ct_no = d1.ct_no '+@CR+
+                       '        and ct_class =''1'' '+@CR+
+                       '       left join  '+@CR+
+                       '        (select ct_no,  '+@CR+
+                       '                convert(varchar(10), '+@new_sdno+'+row_number() over(order by m.ct_no)) as sd_no '+@CR+ -- 貨單編號
+                       '           from (select distinct m.ct_no '+@CR+
+                       '                   from '+@TB_OD_Name+' m  '+@CR+
+                       '                        left join SYNC_TA13.dbo.pcust d1  '+@CR+
+                       '                          on m.ct_no = d1.ct_no  '+@CR+
+                       '                         and ct_class =''1'' '+@CR+
+                       '                 )m '+@CR+
+                       '         ) d2 on d1.ct_no = d2.ct_no '+@CR+
+                       ' where isfound =''Y'' '+@CR+
+                       ' Order by 1, 2, 3, m.ct_no'
+          Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
+
+          --*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*
           -- 新增出貨退回主檔 PKey: sp_no (ASC), sp_slip_fg (ASC)
 print '27'
           set @Msg = '新增出貨退回主檔。'
@@ -520,62 +575,6 @@ print '27'
                        '       d1.ct_payfg '
 
           Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
-
-
-          --*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*
-print '28'
-          set @Msg = '新增['+@sd_date+'] 日出貨退回明細。'
-          set @strSQL ='insert into TYEIPDBS2.lytdbta13.dbo.sslpdttmp '+@CR+
-                       '(sd_class, sd_slip_fg, sd_date, sd_no, sd_ctno, '+@CR+
-                       ' sd_skno, sd_name, sd_whno, sd_whno2, sd_qty, '+@CR+
-                       ' sd_price, sd_dis, sd_stot, sd_lotno, sd_unit, '+@CR+
-                       ' sd_unit_fg, sd_ave_p, sd_rate, sd_seqfld, sd_ordno '+@CR+
-                       ') '+@CR+
-                       'select '''+@sd_class+''' as sd_class, '+@CR+ -- 類別
-                       '       '''+@sd_slip_fg+''' sd_slip_fg, '+@CR+ -- 單據種類
-                       '       convert(datetime, '''+@sd_date+''') as sd_date, '+@CR+ -- 貨單日期
-                       '       d2.sd_no, '+@CR+ -- 貨單編號
-                       '       m.ct_no as sd_ctno, '+@CR+ -- 客戶編號
-                       ''+@CR+
-                       '       d.sk_no as sd_skno, '+@CR+ -- 貨品編號
-                       '       d.sk_name as sd_name, '+@CR+ -- 品名規格
-                       '       ''LB'' as sd_whno, '+@CR+ -- 倉庫(入)
-                       '       '''' as sd_whno2, '+@CR+ -- 倉庫(出)
-                       '       m.sale_qty as sd_qty, '+@CR+ -- 交易數量
-                       ''+@CR+
-                       '       m.sale_amt as sd_price, '+@CR+ -- 價格
-                       '       1 as sd_dis, '+@CR+ -- 折數
-                       '       m.sale_tot as sd_stot, '+@CR+ -- 小計
-                       --2013/5/3 為了抓取重複資料並回寫到備註內，所以改寫到 sd_lotno 此欄位目前似乎未使用，只好當作臨時備註使用
-                       --'       '''+@Rm+'於 ''+Convert(Varchar(20), Getdate(), 120)+char(13)+char(10)+'''+@KindName+@OD_CName +''' as sd_rem, '+@CR+ -- 備用欄位
-                       '       '''+@Rm+@KindName+@OD_CName +''' as sd_lotno, '+@CR+ -- 備用欄位
-                       '       d.sk_unit as sd_unit, '+@CR+ -- 單位
-                       ' '+@CR+
-                       '       0 as sd_unit_fg, '+@CR+ -- 單位旗標
-                       '       d.s_price4 as sd_ave_p, '+@CR+ -- 單位成本
-                       '       1 as sd_rate, '+@CR+ -- 匯率
-                       '       rowid as sd_seqfld, '+@CR+ -- 明細序號, 此序號會因為凌越修改而加以變更，所以另存一份到 sd_ordno
-                       '       rowid as sd_ordno'+@CR+ -- XLS 明細序號
-                       --'       row_number() over(order by m.ct_no, d.sk_no) as sd_seqfld '+@CR+
-                       '  from '+@TB_OD_Name+' m '+@CR+
-                       '       left join SYNC_TA13.dbo.sstock d '+@CR+
-                       '         on m.sk_no = d.sk_no '+@CR+
-                       '       left join SYNC_TA13.dbo.pcust d1 '+@CR+
-                       '         on m.ct_no = d1.ct_no '+@CR+
-                       '        and ct_class =''1'' '+@CR+
-                       '       left join  '+@CR+
-                       '        (select ct_no,  '+@CR+
-                       '                convert(varchar(10), '+@new_sdno+'+row_number() over(order by m.ct_no)) as sd_no '+@CR+ -- 貨單編號
-                       '           from (select distinct m.ct_no '+@CR+
-                       '                   from '+@TB_OD_Name+' m  '+@CR+
-                       '                        left join SYNC_TA13.dbo.pcust d1  '+@CR+
-                       '                          on m.ct_no = d1.ct_no  '+@CR+
-                       '                         and ct_class =''1'' '+@CR+
-                       '                 )m '+@CR+
-                       '         ) d2 on d1.ct_no = d2.ct_no '+@CR+
-                       ' where isfound =''Y'' '+@CR+
-                       ' Order by 1, 2, 3, m.ct_no'
-          Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
           
           --*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*--*
 print '29'
@@ -615,7 +614,7 @@ print '29'
                        'begin '+@CR+
                        '  update TYEIPDBS2.lytdbta13.dbo.sslpdttmp '+@CR+
                        '     set sd_rem='''+@Rm+@OD_CName+'商品比對重複 RowID:''+@Rowid '+@CR+
-                       '   where Convert(Varchar(10), sd_date1, 111) = '''+@sd_Date+''' '+@CR+
+                       '   where Convert(Varchar(10), sd_date, 111) = '''+@sd_Date+''' '+@CR+
                        '     and sd_class = '''+@sd_class+''' '+@CR+
                        '     and sd_slip_fg = '''+@sd_slip_fg+''' '+@CR+
                        '     and sd_lotno like ''%'+@Rm+'%'+@OD_CName+'%'' '+@CR+
@@ -675,9 +674,9 @@ print '29'
                        'begin '+@CR+
                        '  Delete TYEIPDBS2.lytdbta13.dbo.sslpdttmp '+@CR+
                        '   where 1=1 '+@CR+
-                       '     and sd_class = ''@sd_class'' '+@CR+
-                       '     and sd_slip_fg = ''@sd_slip_fg'' '+@CR+
-                       '     and sd_no = ''@sd_no'' '+@CR+
+                       '     and sd_class = @sd_class '+@CR+
+                       '     and sd_slip_fg = @sd_slip_fg '+@CR+
+                       '     and sd_no = @sd_no '+@CR+
                        ''+@CR+
                        '  Fetch Next From Cur_'+@TB_OD_Name+'_Del_No_Header into @sd_class, @sd_slip_fg, @sd_no, @cnt '+@CR+
                        'end '+@CR+
@@ -685,7 +684,7 @@ print '29'
                        'Close Cur_'+@TB_OD_Name+'_Del_No_Header '+@CR+
                        'Deallocate Cur_'+@TB_OD_Name+'_Del_No_Header '
 
-          Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
+          --Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
 
        end
        else

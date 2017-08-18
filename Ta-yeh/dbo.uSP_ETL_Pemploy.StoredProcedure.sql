@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_ETL_Pemploy]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_ETL_Pemploy]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_ETL_Pemploy]
 GO
 SET ANSI_NULLS ON
@@ -149,6 +149,7 @@ begin
                  and bo_yr=DatePart(YY, GetDate())
                  and bo_no=M.e_no
              ),
+           case when (e_birth = '1900/01/01' or e_birth >= getdate()) then 0 else DateDiff(year, e_birth, getdate()) end as Chg_e_Age,
            D3.Chg_Master_Dept, D3.Chg_Duty_Level, D3.Chg_Dept_Level, D3.stock_amt_Level,
            D3.Result_e_no, D3.Result_dept_level, D3.Result_Duty_Level, D3.Result_e_mstno,
            update_datetime = getdate(),

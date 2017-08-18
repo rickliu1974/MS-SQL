@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_ETL_sslpdt]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_ETL_sslpdt]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_ETL_sslpdt]
 GO
 SET ANSI_NULLS ON
@@ -105,7 +105,11 @@ begin
            [Chg_sd_whno_name]=Rtrim(Isnull(D2.wh_name,  '')),
            [Chg_sd_class]=Rtrim(D5.Code_Name),
            [Chg_sd_slip_fg]=Rtrim(D6.Code_Name), 
-
+           /***[單據種類]******************************************************************************
+            =0進貨單(+)     =1進退單(-)     =2出貨單(+)     =3出退單(-)     =4借貨單(-)     =5還貨單(+)
+            =6託售單(+)     =7託回單(-)     =8入庫單(+)     =9出庫單(-)     =A調整單        =B調撥單
+            =C服務單(+)     =R借入單(+)     =S借還單        =T盤點單
+           *******************************************************************************************/
            [Chg_sd_qty]= 
              Case 
                WHEN m.SD_SLIP_FG like '[02568ABCRST]' THEN IsNull(m.SD_QTY, 0)
@@ -137,31 +141,35 @@ begin
            
            
            -- 是否為銷售日主銷商品
-           [Chg_sale_Month_Master] = 
-              Case 
-                when D10.SK_NO is not Null and D10.Sale_Year= D9.Chg_sp_date_year and D10.Sale_Month=D9.Chg_sp_date_month
-                  Then 'Y'
-                else 'N'
-              end,
-           [Chg_sale_Month_MasterName] =
-              Case 
-                when D10.SK_NO is not Null and D10.Sale_Year= D9.Chg_sp_date_year and D10.Sale_Month=D9.Chg_sp_date_month
-                  Then D10.sk_Mname
-                else 'NA'
-              end,
+           -- 2017/08/07 Rickliu 改以商品基本資料取得是否為主銷
+           --[Chg_sale_Month_Master] = 
+           --   Case 
+           --     when D10.SK_NO is not Null and D10.Sale_Year= D9.Chg_sp_date_year and D10.Sale_Month=D9.Chg_sp_date_month
+           --      Then 'Y'
+           --     else 'N'
+           --   end,
+           -- 2017/08/07 Rickliu 改以商品基本資料取得是否為主銷
+           --[Chg_sale_Month_MasterName] =
+           --   Case 
+           --     when D10.SK_NO is not Null and D10.Sale_Year= D9.Chg_sp_date_year and D10.Sale_Month=D9.Chg_sp_date_month
+           --       Then D10.sk_Mname
+           --     else 'NA'
+           --   end,
+           -- 2017/08/07 Rickliu 改以商品基本資料取得是否為主銷
            -- 是否為請款日主銷商品
-           [Chg_inv_Month_Master] = -- 2013/6/1 新增銷售主銷名稱
-              Case 
-                when D8.SK_NO is not Null and D8.Sale_Year= D9.Chg_sp_pdate_year and D8.Sale_Month=D9.Chg_sp_pdate_month
-                  Then 'Y'
-                else 'N'
-              end,
-           [Chg_inv_Month_MasterName] = -- 2013/6/1 新增請款主銷名稱
-              Case 
-                when D8.SK_NO is not Null and D8.Sale_Year= D9.Chg_sp_pdate_year and D8.Sale_Month=D9.Chg_sp_pdate_month
-                  Then D8.sk_Mname
-                else 'NA'
-              end,
+           --[Chg_inv_Month_Master] = -- 2013/6/1 新增銷售主銷名稱
+           --   Case 
+           --     when D8.SK_NO is not Null and D8.Sale_Year= D9.Chg_sp_pdate_year and D8.Sale_Month=D9.Chg_sp_pdate_month
+           --       Then 'Y'
+           --     else 'N'
+           --   end,
+           -- 2017/08/07 Rickliu 改以商品基本資料取得是否為主銷
+           --[Chg_inv_Month_MasterName] = -- 2013/6/1 新增請款主銷名稱
+           --   Case 
+           --     when D8.SK_NO is not Null and D8.Sale_Year= D9.Chg_sp_pdate_year and D8.Sale_Month=D9.Chg_sp_pdate_month
+           --       Then D8.sk_Mname
+           --     else 'NA'
+           --   end,
            -- 2013/1/17 協理與副總確認，當貨品單價高於等於中盤價時才認列業績(此部分確認有含小盤價的業績)，日後的業績報表必須依此呈現。
            -- 2013/1/18 協理與財務林課確認，所有銷單都是以單一品項折扣，所以只要拿主檔折扣進行計算即可。
            [Chg_sd_sale_overmid_tot]= --(此金額為未稅金額)
@@ -537,6 +545,8 @@ begin
                         and sp_no = Substring(sp_rem, 5, 10)) Collate Chinese_Taiwan_Stroke_CI_AS
                else ''
              end,
+           -- 2017/08/04 rickliu 新增單據客戶之業務是否離職
+           ct_sale_leave,
 /**********************************************************************************************************************************************************
   員工基本資料區
  **********************************************************************************************************************************************************/
@@ -566,7 +576,7 @@ begin
            Chg_ctclass, --客戶類別名稱
            sp_mstno, -- 業務組別編號
            Chg_sp_mst_name, --業務組別名稱
-
+           chg_leave, -- 離職否
 /**********************************************************************************************************************************************************
   客戶基本資料區
  **********************************************************************************************************************************************************/
@@ -698,15 +708,21 @@ begin
            [Chg_updat2_Month],
            [Chg_New_Arrival_Date], -- 2015/03/06 Rickliu 新增新品到貨日
            -- 2014/07/02 Rickliu 新增採購新品
-           Chg_IS_New_Stock =
-             Case
-               when (D4.[sk_no] is not null) And ([Chg_sp_date_YM] >= D4.[Chg_New_Arrival_YM]) then 'Y'
-               else 'N'
-             end,
+           --Chg_IS_New_Stock =
+           --  Case
+           --    when (D4.[sk_no] is not null) And ([Chg_sp_date_YM] >= D4.[Chg_New_Arrival_YM]) then 'Y'
+           --    else 'N'
+           --  end,
+           -- 2017/08/01 Rickliu 修訂新品定義，改為以一年內之引進之產品為新品
+           [Chg_IS_New_Stock],
            D4.[Chg_New_First_Qty],
-           Chg_Stock_NonSales, 
            chg_new_arrival_ym,
-
+           
+           -- 2017/08/07 Rickliu 取消使用商品未銷列表
+           -- Chg_Stock_NonSales, 
+           -- 2017/08/07 Rickliu 改以商品基本資料取得是否為主銷
+           [Chg_IS_Master_Stock],
+           stock_kind_list,
 /**********************************************************************************************************************************************************
   庫存資料區
  **********************************************************************************************************************************************************/
@@ -774,14 +790,16 @@ begin
            Left join Ori_Xls#Sys_Code D5 With(NoLock) On  D5.code_class ='7' and M.sd_class = D5.Code_Begin Collate Chinese_Taiwan_Stroke_CI_AS 
            Left join Ori_Xls#Sys_Code D6 With(NoLock) On  D6.code_class ='8' and M.sd_class = D6.Code_Begin Collate Chinese_Taiwan_Stroke_CI_AS and M.sd_slip_fg = D6.Code_End Collate Chinese_Taiwan_Stroke_CI_AS
            Left join Fact_sslip D9 With(NoLock) On sd_class = D9.sp_class and sd_slip_fg = D9.sp_slip_fg and sd_no = D9.sp_no 
-           left join Ori_XLS#Master_Stock D8 With(NoLock)
-             On Year(D9.sp_pdate) = D8.Sale_Year and Month(D9.sp_pdate) = D8.Sale_month
-            and M.sd_skno collate Chinese_Taiwan_Stroke_CI_AS = D8.sk_no collate Chinese_Taiwan_Stroke_CI_AS 
-           left join Ori_XLS#Master_Stock D10 With(NoLock) 
-             On Year(m.sd_date) = D10.Sale_Year and Month(m.sd_date) = D10.Sale_month
-            -- 2013/6/1 變更主銷結構，取消 MasterKey 欄位，主銷的 SK_NAME 則改為主銷商品名稱
-            -- and M.sd_skno collate Chinese_Taiwan_Stroke_CI_AS = D10.Masterkey collate Chinese_Taiwan_Stroke_CI_AS
-            and M.sd_skno collate Chinese_Taiwan_Stroke_CI_AS = D10.sk_no collate Chinese_Taiwan_Stroke_CI_AS
+           -- 2017/08/07 Rickliu 改以商品基本資料取得是否為主銷
+           --left join Ori_XLS#Master_Stock D8 With(NoLock)
+           --  On Year(D9.sp_pdate) = D8.Sale_Year and Month(D9.sp_pdate) = D8.Sale_month
+           -- and M.sd_skno collate Chinese_Taiwan_Stroke_CI_AS = D8.sk_no collate Chinese_Taiwan_Stroke_CI_AS 
+           -- 2017/08/07 Rickliu 改以商品基本資料取得是否為主銷
+           --left join Ori_XLS#Master_Stock D10 With(NoLock) 
+           --  On Year(m.sd_date) = D10.Sale_Year and Month(m.sd_date) = D10.Sale_month
+           -- 2013/6/1 變更主銷結構，取消 MasterKey 欄位，主銷的 SK_NAME 則改為主銷商品名稱
+           -- and M.sd_skno collate Chinese_Taiwan_Stroke_CI_AS = D10.Masterkey collate Chinese_Taiwan_Stroke_CI_AS
+           -- and M.sd_skno collate Chinese_Taiwan_Stroke_CI_AS = D10.sk_no collate Chinese_Taiwan_Stroke_CI_AS
             -- 2014/10/02 Rickliu 增加最後分店一次交易旗標
            left join CTE_Q1 D11
             On m.sd_class = d11.sd_class
@@ -807,101 +825,158 @@ begin
             and M.sd_slip_fg = 'B'
             and D13.code_class ='8' 
             and D13.Code_Name = RTrim(Substring(Sp_rem, 1, 3)) Collate Chinese_Taiwan_Stroke_CI_AS
-    where m.sd_date >= Convert(Varchar(5), year(DateAdd(year, -5, getdate())))+ '/01/01' 
+    where 1=1
+      -- 2017/08/08 Rickliu 從 2013 年起算，保留近五年資料
+      and m.sd_date > '2013/01/01'
+      and m.sd_date >= Convert(Varchar(5), year(DateAdd(year, -5, getdate())))+ '/01/01' 
     
-    /*==============================================================*/
-    /* Index: sslpdt_Timestamp                                      */
-    /*==============================================================*/
-    --set @Msg = '建立索引 [Fact_sslpdt.sslpdt_timestamp]'
-    --Print @Msg
-    --if exists (select * from sys.indexes where object_id = object_id('[dbo].[fact_sslpdt]') and name = 'pk_sslpdt')
-    --   alter table [dbo].[pk_sslpdt] drop constraint [pk_sslpdt]
+  /*==============================================================*/
+  /* Index: sslpdt_Timestamp                                      */
+  /*==============================================================*/
+  --set @Msg = '建立索引 [Fact_sslpdt.sslpdt_timestamp]'
+  --Print @Msg
+  --if exists (select * from sys.indexes where object_id = object_id('[dbo].[fact_sslpdt]') and name = 'pk_sslpdt')
+  --   alter table [dbo].[pk_sslpdt] drop constraint [pk_sslpdt]
 
-    --alter table [dbo].[fact_sslpdt] add  constraint [pk_sslpdt] primary key nonclustered ([sslpdt_timestamp] asc) with 
-    --(pad_index  = off, statistics_norecompute  = off, sort_in_tempdb = off, ignore_dup_key = off, online = off, allow_row_locks  = on, allow_page_locks  = on) on [primary]
+  --alter table [dbo].[fact_sslpdt] add  constraint [pk_sslpdt] primary key nonclustered ([sslpdt_timestamp] asc) with 
+  --(pad_index  = off, statistics_norecompute  = off, sort_in_tempdb = off, ignore_dup_key = off, online = off, allow_row_locks  = on, allow_page_locks  = on) on [primary]
 
 
-    /*==============================================================*/
-    /* Index: sdno                                                  */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt.sdno]'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'sdno' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.sdno
-    create clustered index sdno on dbo.fact_sslpdt (sd_no, sd_slip_fg) with fillfactor= 30  on "PRIMARY"
-    /*==============================================================*/
-    /* Index: class                                                 */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt.class]'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'class' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.class
-    create index class on dbo.fact_sslpdt (sd_class) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: CSNO                                                  */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt (sd_csno)...'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'CSNO' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.CSNO
-    create index CSNO on dbo.fact_sslpdt (sd_csno) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: ctno                                                  */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt (sd_ctno, sd_class)...'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'ctno' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.ctno
-    create index ctno on dbo.fact_sslpdt (sd_ctno, sd_class) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: ordno                                                 */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt.ordno]'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'ordno' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.ordno
-    create index ordno on dbo.fact_sslpdt (sd_ordno, sd_class) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: sdda                                                  */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt.sdda]'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'sdda' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.sdda
-    create index sdda on dbo.fact_sslpdt (sd_date, sd_class) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: skda                                                  */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt.skda]'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'skda' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.skda
-    create index skda on dbo.fact_sslpdt (sd_skno, sd_date) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: skno                                                  */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [fact_sslpdt.skno]'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'skno' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.skno
-    create index skno on dbo.fact_sslpdt (sd_skno, sd_ctno, sd_date, sd_class) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: slip_fg                                               */
-    /*==============================================================*/
-    Set @Msg = '建立索引 [Fact_sslpdt.slip_fg]'
-    Print @Msg
-    if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'slip_fg' and indid > 0 and indid < 255) 
-       drop index dbo.fact_sslpdt.slip_fg
-    create index slip_fg on dbo.fact_sslpdt (sd_slip_fg) with fillfactor= 30 on "PRIMARY"
-    /*==============================================================*/
-    /* Index: IX_sslpdt_N1                                          */
-    /*==============================================================*/
-    --  Print 'Create index [IX_sslpdt_N1] on [dbo].[Fact_sslpdt] ([Chg_skno_BKind], [sd_slip_fg], [Chg_sp_pdate_Year])...'
-    --  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'IX_sslpdt_N1' and indid > 0 and indid < 255) 
-    --     drop index dbo.fact_sslpdt.slip_fg
-    --  create index [IX_sslpdt_N1] on [dbo].[Fact_sslpdt] ([Chg_skno_BKind], [sd_slip_fg], [Chg_sp_pdate_Year])
-    --  INCLUDE ([Chg_sales_Name],[Chg_sd_Pay_Sale],[Chg_sp_pdate_Month],[sp_sales])
-    
+  /*==============================================================*/
+  /* Index: sdno                                                  */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt.sdno]'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'sdno' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.sdno
+  create clustered index sdno on dbo.fact_sslpdt (sd_no, sd_slip_fg) with fillfactor= 30  on "PRIMARY"
+  /*==============================================================*/
+  /* Index: class                                                 */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt.class]'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'class' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.class
+  create index class on dbo.fact_sslpdt (sd_class) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: CSNO                                                  */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt (sd_csno)...'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'CSNO' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.CSNO
+  create index CSNO on dbo.fact_sslpdt (sd_csno) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: ctno                                                  */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt (sd_ctno, sd_class)...'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'ctno' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.ctno
+  create index ctno on dbo.fact_sslpdt (sd_ctno, sd_class) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: ordno                                                 */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt.ordno]'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'ordno' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.ordno
+  create index ordno on dbo.fact_sslpdt (sd_ordno, sd_class) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: sdda                                                  */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt.sdda]'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'sdda' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.sdda
+  create index sdda on dbo.fact_sslpdt (sd_date, sd_class) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: skda                                                  */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt.skda]'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'skda' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.skda
+  create index skda on dbo.fact_sslpdt (sd_skno, sd_date) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: skno                                                  */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [fact_sslpdt.skno]'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'skno' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.skno
+  create index skno on dbo.fact_sslpdt (sd_skno, sd_ctno, sd_date, sd_class) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: slip_fg                                               */
+  /*==============================================================*/
+  Set @Msg = '建立索引 [Fact_sslpdt.slip_fg]'
+  Print @Msg
+  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'slip_fg' and indid > 0 and indid < 255) 
+     drop index dbo.fact_sslpdt.slip_fg
+  create index slip_fg on dbo.fact_sslpdt (sd_slip_fg) with fillfactor= 30 on "PRIMARY"
+  /*==============================================================*/
+  /* Index: IX_sslpdt_N1                                          */
+  /*==============================================================*/
+  --  Print 'Create index [IX_sslpdt_N1] on [dbo].[Fact_sslpdt] ([Chg_skno_BKind], [sd_slip_fg], [Chg_sp_pdate_Year])...'
+  --  if exists (select 1 from sysindexes where id = object_id('dbo.fact_sslpdt') and name  = 'IX_sslpdt_N1' and indid > 0 and indid < 255) 
+  --     drop index dbo.fact_sslpdt.slip_fg
+  --  create index [IX_sslpdt_N1] on [dbo].[Fact_sslpdt] ([Chg_skno_BKind], [sd_slip_fg], [Chg_sp_pdate_Year])
+  --  INCLUDE ([Chg_sales_Name],[Chg_sd_Pay_Sale],[Chg_sp_pdate_Month],[sp_sales])
+
+
+/*********************************************************************************************************************************************************
+  2017/08/15 Ricliu 以下此表是專給 主銷、新品、滯銷之百大及非百大 鋪貨率 報表所用
+********************************************************************************************************************************************************/
+  IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[fact_sslpdt_Near_Year]') AND type in (N'U'))
+  begin
+     Set @Msg = '刪除資料表 [fact_sslpdt_Near_Year]'
+     set @strSQL= 'DROP TABLE [dbo].[fact_sslpdt_Near_Year]'
+
+     Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
+  end
+
+  select Chg_sp_pdate_YM,
+         Chg_bu_no, ct_fld3 as Chg_bu_Name,
+         ct_sales, chg_ct_sales_name,
+         ct_no8, ct_sname8+
+         case
+           when chg_ct_close  = 'Y' then '[關]'
+           else ''
+         end as ct_sname8,
+         chg_ct_close,
+         sd_skno, sd_name, stock_kind_list,
+         chg_is_master_stock,
+         chg_is_New_Stock,
+         chg_is_Dead_Stock,
+         Chg_Hunderd_Customer,
+         Sum(Chg_sd_qty) as Chg_sd_qty,
+         Sum(Chg_sd_stot) as Chg_sd_stot
+         into fact_sslpdt_Near_Year
+    from fact_sslpdt with(NoLock)
+   where 1=1
+     and sd_class in ('1', '8')
+     and Chg_sp_pdate_YM >='2013/01'
+     and substring(ct_no8, 1, 2) Not in ('IT', 'IZ', 'ZZ')
+     and substring(sd_skno, 1, 1) = 'A'
+     and Chg_sp_pdate_YM >= Convert(Varchar(7), DateAdd(mm, -12,getdate()), 111)
+     and ct_fld3 <> ''
+   group by Chg_sp_pdate_YM, Chg_bu_no, ct_fld3,
+            ct_sales, chg_ct_sales_name,
+            ct_no8, ct_sname8, chg_ct_close,
+            sd_skno, sd_name, stock_kind_list,
+            chg_is_master_stock,
+            chg_is_New_Stock,
+            chg_is_Dead_Stock,
+             Chg_Hunderd_Customer
+   order by Chg_sp_pdate_YM, Chg_bu_no, ct_fld3,
+            ct_sales, chg_ct_sales_name,
+            ct_no8, ct_sname8, chg_ct_close,
+            sd_skno, sd_name, stock_kind_list,
+            chg_is_master_stock,
+            chg_is_New_Stock,
+            chg_is_Dead_Stock,
+            Chg_Hunderd_Customer
+   
   end try
   begin catch
     set @Cnt = -1

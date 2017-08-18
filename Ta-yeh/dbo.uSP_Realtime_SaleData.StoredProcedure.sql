@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Realtime_SaleData]    Script Date: 07/24/2017 14:44:00 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Realtime_SaleData]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_Realtime_SaleData]
 GO
 SET ANSI_NULLS ON
@@ -179,12 +179,13 @@ begin
                    '       '''+@ReMark+''' as Remark'+@CR+
                    '  from '+@TB_Target+' m'+@TB_Hint+@CR+
                    '       left join Fact_pcust d1 '+@TB_Hint+@CR+
-                   '         on d1.ct_no8 <> '''' '+@CR+
-                   '        and m.ct_no '+@Collate+' = d1.ct_no '+@Collate+@CR+
+                   '         on m.ct_no '+@Collate+' = d1.ct_no '+@Collate+@CR+
                    '       left join '+@rDB+'pattn d2 '+@TB_Hint+@CR+
                    '         on tn_class=''5'''+@CR+
                    '        and d1.ct_loc '+@Collate+' = d2.TN_NO '+@Collate+@CR+
                    ' where 1=1'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by m.Year, m.month, d2.TN_NO, d2.Tn_Contact  '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -220,9 +221,10 @@ begin
                    '  from fact_sslip M'+@TB_Hint+@CR+
                    ' where 1=1'+@CR+
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, ct_loc, chg_loc_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -297,7 +299,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, e_dept, chg_dp_name '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -345,7 +348,7 @@ begin
   set @Kind = '00006'
   if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
   begin
-     set @Kind_Name = '每月業務客戶實銷金額(個人業績)'
+     set @Kind_Name = '每月業務實銷金額(個人業績)'
      set @Remark= '(請款日, 表身, 含稅, 含服務單, 扣折讓, 無加減項)'
      Set @Msg = @Kind+'.刪除 '+@Kind_Name+' 資料'
      set @strWhere ='Where kind = '''+@Kind+''' '
@@ -372,7 +375,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -383,7 +387,7 @@ begin
   set @Kind = '00007'
   if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
   begin
-     set @Kind_Name = '每月業務客戶銷售金額(個人業績)'
+     set @Kind_Name = '每月業務銷售金額(個人業績)'
      set @Remark= '(依請款日, 表頭, 含稅, 含服務單, 無折讓)'
      Set @Msg = @Kind+'.刪除 '+@Kind_Name+' 資料'
      set @strWhere ='Where kind = '''+@Kind+''' '
@@ -410,7 +414,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -421,7 +426,7 @@ begin
   set @Kind = '00008'
   if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
   begin
-     set @Kind_Name = '每月業務客戶退貨金額(個人業績)'
+     set @Kind_Name = '每月業務退貨金額(個人業績)'
      set @Remark= '(請款日, 表頭, 含稅, 無折讓, 無加減項)'
      Set @Msg = @Kind+'.刪除 '+@Kind_Name+' 資料'
      set @strWhere ='Where kind = '''+@Kind+''' '
@@ -448,7 +453,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and sp_slip_fg = ''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -459,7 +465,7 @@ begin
   set @Kind = '00009'
   if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
   begin
-     set @Kind_Name = '每月業務客戶新品銷貨金額(個人業績)'
+     set @Kind_Name = '每月業務新品銷貨金額(個人業績)'
      set @Remark= '(請款日, 表身, 含稅, 無折讓, 無加減項)'
      Set @Msg = @Kind+'.刪除 '+@Kind_Name+' 資料'
      set @strWhere ='Where kind = '''+@Kind+''' '
@@ -487,7 +493,8 @@ begin
                    '   and chg_is_new_stock=''Y'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -498,7 +505,7 @@ begin
   set @Kind = '00010'
   if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
   begin
-     set @Kind_Name = '每月業務客戶新品退貨金額(個人業績)'
+     set @Kind_Name = '每月業務新品退貨金額(個人業績)'
      set @Remark= '(請款日, 表身, 含稅, 無折讓, 無加減項)'
      Set @Msg = @Kind+'.刪除 '+@Kind_Name+' 資料'
      set @strWhere ='Where kind = '''+@Kind+''' '
@@ -526,7 +533,8 @@ begin
                    '   and chg_is_new_stock=''Y'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -567,7 +575,8 @@ begin
                    '        where 1=1'+@CR+
                    '          and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '          and sum_recamt <> 0'+@CR+
-                   '          and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '          and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    '       ) m'+@CR+
                    ' group by sp_year, sp_month, e_no, e_name '
 
@@ -606,7 +615,8 @@ begin
                    ' where 1=1'+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, Chg_BU_NO, IsNull(ct_fld3, '''+@CNonSet+''')'+@CR+
                    'having Sum(chg_sp_stot_tax) <> 0 '
 
@@ -823,7 +833,8 @@ begin
                    '   and chg_is_new_stock=''Y'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -862,7 +873,8 @@ begin
                    '   and chg_is_new_stock=''Y'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -1122,7 +1134,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''3'' Or sp_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -1160,7 +1173,8 @@ begin
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_is_lan_custom =''Y'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, IsNull(sp_ctno, ''0000000''), IsNull(ct_sname, '''+@CNonSet+''')'+@CR+
                    'having Sum(chg_sp_stot_tax) <> 0 '
                    
@@ -1199,7 +1213,8 @@ begin
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_is_lan_custom =''Y'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, Chg_BU_NO, IsNull(ct_fld3, '''+@CNonSet+''')'+@CR+
                    'having Sum(chg_sp_stot_tax) <> 0 '
 
@@ -1329,7 +1344,7 @@ begin
                    '  from fact_pcust'+@TB_Hint+@CR+
                    ' where 1=1'+@CR+
                    '   and chg_ct_close = '''' '+@CR+
-                   '   and Chg_BU_NO <> '''' '+@CR+
+                   '   and Rtrim(Ltrim(Chg_BU_NO)) <> '''' '+@CR+
                    ' group by Rtrim(Ltrim(Chg_BU_NO)), Rtrim(Ltrim(ct_fld3)) '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -1365,7 +1380,8 @@ begin
                    '  from fact_pcust'+@TB_Hint+@CR+
                    ' where 1=1'+@CR+
                    '   and chg_ct_close = '''' '+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by Rtrim(Ltrim(ct_sales)), Rtrim(Ltrim(chg_ct_sales_name)) '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -1401,7 +1417,8 @@ begin
                    '  from fact_pcust'+@TB_Hint+@CR+
                    ' where 1=1'+@CR+
                    '   and chg_ct_close = '''' '+@CR+
-                   '   and ct_no8 <> '''' '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by Rtrim(Ltrim(ct_loc)), Rtrim(Ltrim(chg_loc_name)) '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -2020,6 +2037,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_hunderd_customer=''Y'''+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by m.chg_sp_pdate_year, chg_bu_no, IsNull(ct_fld3, '''+@CNonSet+''') '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -2094,6 +2113,8 @@ begin
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_hunderd_customer=''Y'''+@CR+
                    '   and m.chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by m.chg_sp_pdate_year, m.chg_sp_pdate_month '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -2132,6 +2153,8 @@ begin
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_hunderd_customer=''Y'''+@CR+
                    '   and m.chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by m.chg_sp_pdate_year, m.chg_sp_pdate_month, chg_bu_no, IsNull(ct_fld3, '''+@CNonSet+''') '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -2621,6 +2644,8 @@ begin
                    '   and amt > 0'+@CR+
                    '   and area_year <= Year(Dateadd(mm, -3, getdate()))'+@CR+
                    '   and area_month <= month(Dateadd(mm, -3, getdate()))'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   --'   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by area_year, area_month, area, area_name'+@CR+
                    'having Round(Sum(IsNull(amt, 0)), 0) <> 0 '
 
@@ -3217,7 +3242,7 @@ begin
                    '          from fact_pcust'+@TB_Hint+@CR+
                    '         where chg_bu_no <> '''' '+@CR+
                    '       ) d'+@CR+
-                   '         on Substring(m.area, 1, 6)=d.chg_bu_no '+@Collate+@CR+
+                   '        on Substring(m.area, 1, 6)=d.chg_bu_no '+@Collate+@CR+
                    ' where kind =''00126'''+@CR+
                    ' group by area_year, area_month, Substring(m.area, 1, 6), d.ct_fld3'
 
@@ -4530,6 +4555,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, e_dept, chg_dp_name '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -4567,6 +4594,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and sp_slip_fg = ''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, e_dept, chg_dp_name '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -7366,8 +7395,9 @@ begin
                    '       '''+@ReMark+''' as Remark'+@CR+
                    '  from fact_sslpdt'+@TB_Hint+@CR+
                    ' where sd_class =''3'''+@CR+
-                   '   and Chg_sp_pdate_YM <='+@CR+
-                   '       Convert(Varchar(7), DateAdd(mm, -1, getdate()), 111)'+@CR+
+                   '   and Chg_sp_pdate_YM <= Convert(Varchar(7), DateAdd(mm, -1, getdate()), 111)'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    '  group by ct_no8, ct_sname8 '+@CR+
                    ' having Sum(Isnull(chg_sd_qty * sk_save, 0)) <> 0 '
 
@@ -7427,44 +7457,23 @@ begin
 
      Set @Msg = @Kind+'.新增 '+@Kind_Name+' 資料'
      set @strSQL = @SP_WTL_TB_RT_Data_tmp+@CR+
-                   ';With CTE_Q1 as ('+@CR+
-                   '  select distinct cal_year as area_year, cal_month as area_month'+@CR+
-                   '    from Calendar'+@TB_Hint+@CR+
-                   '   where cal_year >= ''2013'''+@CR+
-                   '     and cal_year <= Year(getdate())+1'+@CR+
-                   '), CTE_Q2 as ('+@CR+
-                   '  select distinct IsNull(Chg_BU_NO+''-''+Chg_Cust_Sale_Class, '''+@CNonSet+''') as area, '+@CR+
-                   '         Chg_Cust_Sale_Class_sName as area_name'+@CR+
-                   '    from fact_sslip'+@TB_Hint+@CR+
-                   '   where 1=1'+@CR+
-                   '     and (sp_slip_fg=''2'' Or sp_slip_fg=''3'' Or sp_slip_fg=''C'')'+@CR+
-                   '     and chg_sp_date_Year >=''2013'''+@CR+
-                   '     and ct_no8 <> '''' '+@CR+
-                   '), CTE_Q3 as ('+@CR+
-                   '  select *'+@CR+
-                   '    from CTE_Q1'+@CR+
-                   '         Cross Join CTE_Q2'+@CR+
-                   ')'+@CR+
-                   ''+@CR+  
                    'insert into '+@TB_RT_Data_tmp+@CR+
                    'select '''+@Kind+''' '+@Collate+' as kind,'+@CR+
                    '       '''+@Kind+'.'+@Kind_Name+''' '+@Collate+' as kind_name,'+@CR+
-                   '       area_year,'+@CR+
-                   '       area_month,'+@CR+
-                   '       area,'+@CR+
-                   '       area_name,'+@CR+
+                   '       chg_sp_date_year as area_year,'+@CR+
+                   '       chg_sp_date_month as area_month,'+@CR+
+                   '       IsNull(Chg_BU_NO+''-''+Chg_Cust_Sale_Class, '''+@CNonSet+''') as area,'+@CR+
+                   '       Chg_Cust_Sale_Class_sName as area_name,'+@CR+
                    '       Isnull(Round(Sum(IsNull(chg_sp_stot_tax, 0)), 4) +'+@CR+
                    '       sum(Isnull(Chg_sp_dis_tot2, 0)) + sum(Chg_SP_PAMT+Chg_SP_MAMT) * -1, 0) as amt,'+@CR+
                    '       '''' as Not_Accumulate,'+@CR+
                    '       1 as Data_Type,'+@CR+
                    '       '''+@ReMark+''' as Remark'+@CR+
-                   '  from CTE_Q3 m'+@TB_Hint+@CR+
-                   '       left join fact_sslip d'+@TB_Hint+@CR+
-                   '         on m.area_year = d.chg_sp_date_year'+@CR+
-                   '        and m.area_month = d.chg_sp_date_month'+@CR+
-                   '        and m.area = IsNull(d.Chg_BU_NO+''-''+d.Chg_Cust_Sale_Class, '''+@CNonSet+''')'+@CR+
-                   '        and (d.sp_slip_fg=''2'' Or d.sp_slip_fg=''3'' Or d.sp_slip_fg=''C'')'+@CR+
-                   ' group by m.area_year, m.area_month, m.area, m.area_name '
+                   '  from fact_sslip'+@TB_Hint+@CR+
+                   ' where 1=1'+@CR+
+                   '   and (sp_slip_fg=''2'' Or sp_slip_fg=''3'' Or sp_slip_fg=''C'')'+@CR+
+                   '   and Chg_BU_NO <> '''' '+@CR+
+                   ' group by chg_sp_date_year, chg_sp_date_month, IsNull(Chg_BU_NO+''-''+Chg_Cust_Sale_Class, '''+@CNonSet+'''), Chg_Cust_Sale_Class_sName '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
      if @Get_Result = @Err_Code Set @Result = @Err_Code
@@ -7485,45 +7494,22 @@ begin
 
      Set @Msg = @Kind+'.新增 '+@Kind_Name+' 資料'
      set @strSQL = @SP_WTL_TB_RT_Data_tmp+@CR+
-                   ';With CTE_Q1 as ('+@CR+
-                   '  select distinct cal_year as area_year, cal_month as area_month'+@CR+
-                   '    from Calendar'+@TB_Hint+@CR+
-                   '   where cal_year >= ''2013'''+@CR+
-                   '     and cal_year <= Year(getdate())+1'+@CR+
-                   '), CTE_Q2 as ('+@CR+
-                   '  select distinct IsNull(Chg_BU_NO+''-''+Chg_Cust_Sale_Class, '''+@CNonSet+''') as area, '+@CR+
-                   '         Chg_Cust_Sale_Class_sName as area_name'+@CR+
-                   '    from fact_sslip'+@TB_Hint+@CR+
-                   '   where 1=1'+@CR+
-                   '     and (sp_slip_fg=''2'' Or sp_slip_fg=''3'' Or sp_slip_fg=''C'')'+@CR+
-                   '     and chg_sp_date_Year >=''2013'''+@CR+
-                   '     and ct_no8 <> '''' '+@CR+
-                   '), CTE_Q3 as ('+@CR+
-                   '  select *'+@CR+
-                   '    from CTE_Q1'+@CR+
-                   '         Cross Join CTE_Q2'+@CR+
-                   ')'+@CR+
-                   ''+@CR+  
                    'insert into '+@TB_RT_Data_tmp+@CR+
                    'select '''+@Kind+''' '+@Collate+' as kind,'+@CR+
                    '       '''+@Kind+'.'+@Kind_Name+''' '+@Collate+' as kind_name,'+@CR+
-                   '       area_year,'+@CR+
-                   '       area_month,'+@CR+
-                   '       area,'+@CR+
-                   '       area_name,'+@CR+
-                   '       Round(Sum(IsNull(d.chg_sp_ave_p, 0)), 4) as amt,'+@CR+
+                   '       chg_sp_date_year as area_year,'+@CR+
+                   '       chg_sp_date_month as area_month,'+@CR+
+                   '       IsNull(Chg_BU_NO+''-''+Chg_Cust_Sale_Class, '''+@CNonSet+''') as area,'+@CR+
+                   '       Chg_Cust_Sale_Class_sName as area_name,'+@CR+
+                   '       sum(Isnull(chg_sp_ave_p, 0)) as amt,'+@CR+
                    '       '''' as Not_Accumulate,'+@CR+
                    '       1 as Data_Type,'+@CR+
                    '       '''+@ReMark+''' as Remark'+@CR+
-                   '  from CTE_Q3 m'+@CR+
-                   '       left join fact_sslip d'+@TB_Hint+@CR+
-                   '         on m.area_year = d.chg_sp_date_year'+@CR+
-                   '        and m.area_month = d.chg_sp_date_month'+@CR+
-                   '        and m.area = IsNull(d.Chg_BU_NO+''-''+d.Chg_Cust_Sale_Class, '''+@CNonSet+''')'+@CR+
-                   '        and (d.sp_slip_fg =''2'' Or d.sp_slip_fg =''3'' Or d.sp_slip_fg =''C'')'+@CR+
-                   '        and Len(IsNull(Chg_BU_NO+''-''+Chg_Cust_Sale_Class, '''+@CNonSet+''')) = 7'+@CR+
-                   ' group by m.area_year, m.area_month, m.area, m.area_name '
-
+                   '  from fact_sslip'+@TB_Hint+@CR+
+                   ' where 1=1'+@CR+
+                   '   and (sp_slip_fg=''2'' Or sp_slip_fg=''3'' Or sp_slip_fg=''C'')'+@CR+
+                   '   and Chg_BU_NO <> '''' '+@CR+
+                   ' group by chg_sp_date_year, chg_sp_date_month, IsNull(Chg_BU_NO+''-''+Chg_Cust_Sale_Class, '''+@CNonSet+'''), Chg_Cust_Sale_Class_sName '
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
      if @Get_Result = @Err_Code Set @Result = @Err_Code
   end
@@ -7552,7 +7538,7 @@ begin
                    '       m.area_name,'+@CR+
                    '       Round(Isnull(m.amt, 0) - isnull(d.amt, 0), 4) as amt,'+@CR+
                    '       '''' as Not_Accumulate,'+@CR+
-                   '       3 as Data_Type,'+@CR+
+                   '       1 as Data_Type,'+@CR+
                    '       '''+@ReMark+''' as Remark'+@CR+
                    '  from '+@TB_RT_Data_tmp+' m'+@TB_Hint+@CR+
                    '       inner join '+@TB_RT_Data_tmp+' d'+@TB_Hint+@CR+
@@ -7624,43 +7610,25 @@ begin
 
      Set @Msg = @Kind+'.新增 '+@Kind_Name+' 資料'
      set @strSQL = @SP_WTL_TB_RT_Data_tmp+@CR+
-                   ';With CTE_Q1 as ('+@CR+
-                   '  select distinct cal_year as area_year, cal_month as area_month'+@CR+
-                   '    from Calendar'+@TB_Hint+@CR+
-                   '   where cal_year >= ''2013'''+@CR+
-                   '     and cal_year <= Year(getdate())+1'+@CR+
-                   '), CTE_Q2 as ('+@CR+
-                   '  select distinct Chg_Dept_Cust_Chain_No as area, Chg_Dept_Cust_Chain_Name as area_name'+@CR+
-                   '    from fact_sslip'+@TB_Hint+@CR+
-                   '   where 1=1'+@CR+
-                   '     and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
-                   '     and Len(Chg_Dept_Cust_Chain_No) = 7'+@CR+
-                   '     and chg_sp_date_Year >=''2013'''+@CR+
-                   '), CTE_Q3 as ( '+@CR+
-                   '  select *'+@CR+
-                   '    from CTE_Q1 '+@CR+
-                   '         Cross Join CTE_Q2 '+@CR+
-                   ')'+@CR+
-                   ''+@CR+  
                    'insert into '+@TB_RT_Data_tmp+@CR+
-                   'select '''+@Kind+''' '+@Collate+' as kind,'+@CR+
+                   'select distinct '+@CR+
+                   '       '''+@Kind+''' '+@Collate+' as kind,'+@CR+
                    '       '''+@Kind+'.'+@Kind_Name+''' '+@Collate+' as kind_name,'+@CR+
-                   '       area_year,'+@CR+
-                   '       area_month,'+@CR+
-                   '       area,'+@CR+
-                   '       area_name,'+@CR+
-                   '       Isnull(Round(Sum(IsNull(chg_sp_stot_tax, 0)), 4) +'+@CR+
-                   '       sum(Isnull(Chg_sp_dis_tot2, 0)) + sum(Chg_SP_PAMT+Chg_SP_MAMT) * -1, 0) as amt,'+@CR+
+                   '       chg_sp_date_year as area_year,'+@CR+
+                   '       chg_sp_date_month area_month,'+@CR+
+                   '       Chg_Dept_Cust_Chain_No as area,'+@CR+
+                   '       Chg_Dept_Cust_Chain_Name as area_name,'+@CR+
+                   '       Round(Sum(IsNull(chg_sp_stot_tax, 0)), 4) +'+@CR+
+                   '       sum(Isnull(Chg_sp_dis_tot2, 0)) + sum(Isnull(Chg_SP_PAMT,0)+Isnull(Chg_SP_MAMT,0)) * -1 as amt,'+@CR+
                    '       '''' as Not_Accumulate,'+@CR+
                    '       1 as Data_Type,'+@CR+
                    '       '''+@ReMark+''' as Remark'+@CR+
-                   '  from CTE_Q3 m'+@CR+
-                   '       left join fact_sslip d'+@TB_Hint+@CR+
-                   '         on m.area_year = d.chg_sp_date_year'+@CR+
-                   '        and m.area_month = d.chg_sp_date_month'+@CR+
-                   '        and m.area = d.Chg_Dept_Cust_Chain_No'+@CR+
-                   '        and (d.sp_slip_fg =''2'' Or d.sp_slip_fg =''C'' Or d.sp_slip_fg = ''3'')'+@CR+
-                   ' group by m.area_year, m.area_month, m.area, m.area_name '
+                   '  from fact_sslip '+@TB_Hint+@CR+
+                   ' where 1=1'+@CR+
+                   '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
+                   ' group by chg_sp_date_year, chg_sp_date_month, Chg_Dept_Cust_Chain_No, Chg_Dept_Cust_Chain_Name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
      if @Get_Result = @Err_Code Set @Result = @Err_Code
@@ -7681,42 +7649,24 @@ begin
 
      Set @Msg = @Kind+'.新增 '+@Kind_Name+' 資料'
      set @strSQL = @SP_WTL_TB_RT_Data_tmp+@CR+
-                   ';With CTE_Q1 as ('+@CR+
-                   '  select distinct cal_year as area_year, cal_month as area_month'+@CR+
-                   '    from Calendar'+@TB_Hint+@CR+
-                   '   where cal_year >= ''2013'''+@CR+
-                   '     and cal_year <= Year(getdate())+1'+@CR+
-                   '), CTE_Q2 as ('+@CR+
-                   '  select distinct Chg_Dept_Cust_Chain_No as area, Chg_Dept_Cust_Chain_Name as area_name'+@CR+
-                   '    from fact_sslip'+@TB_Hint+@CR+
-                   '   where 1=1'+@CR+
-                   '     and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
-                   '     and Len(Chg_Dept_Cust_Chain_No) = 7'+@CR+
-                   '     and chg_sp_date_Year >=''2013'''+@CR+
-                   '), CTE_Q3 as ( '+@CR+
-                   '  select *'+@CR+
-                   '    from CTE_Q1 '+@CR+
-                   '         Cross Join CTE_Q2 '+@CR+
-                   ')'+@CR+
-                   ''+@CR+
                    'insert into '+@TB_RT_Data_tmp+@CR+
-                   'select '''+@Kind+''' '+@Collate+' as kind,'+@CR+
+                   'select distinct '+@CR+
+                   '       '''+@Kind+''' '+@Collate+' as kind,'+@CR+
                    '       '''+@Kind+'.'+@Kind_Name+''' '+@Collate+' as kind_name,'+@CR+
-                   '       area_year,'+@CR+
-                   '       area_month,'+@CR+
-                   '       area,'+@CR+
-                   '       area_name,'+@CR+
-                   '       Round(Sum(IsNull(d.chg_sp_ave_p, 0)), 4) as amt,'+@CR+
+                   '       chg_sp_date_year as area_year,'+@CR+
+                   '       chg_sp_date_month area_month,'+@CR+
+                   '       Chg_Dept_Cust_Chain_No as area,'+@CR+
+                   '       Chg_Dept_Cust_Chain_Name as area_name,'+@CR+
+                   '       Round(Sum(IsNull(chg_sp_ave_p, 0)), 4) as amt,'+@CR+
                    '       '''' as Not_Accumulate,'+@CR+
                    '       1 as Data_Type,'+@CR+
                    '       '''+@ReMark+''' as Remark'+@CR+
-                   '  from CTE_Q3 m'+@CR+
-                   '       left join fact_sslip d'+@TB_Hint+@CR+
-                   '         on m.area_year = d.chg_sp_date_year'+@CR+
-                   '        and m.area_month = d.chg_sp_date_month'+@CR+
-                   '        and m.area = d.Chg_Dept_Cust_Chain_No'+@CR+
-                   '        and (d.sp_slip_fg =''2'' Or d.sp_slip_fg =''C'' Or d.sp_slip_fg = ''3'')'+@CR+
-                   ' group by m.area_year, m.area_month, m.area, m.area_name '
+                   '  from fact_sslip '+@TB_Hint+@CR+
+                   ' where 1=1'+@CR+
+                   '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
+                   ' group by chg_sp_date_year, chg_sp_date_month, Chg_Dept_Cust_Chain_No, Chg_Dept_Cust_Chain_Name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
      if @Get_Result = @Err_Code Set @Result = @Err_Code
@@ -7746,7 +7696,7 @@ begin
                    '       m.area_name,'+@CR+
                    '       Round(Isnull(m.amt, 0) - isnull(d.amt, 0), 4) as amt,'+@CR+
                    '       '''' as Not_Accumulate,'+@CR+
-                   '       3 as Data_Type,'+@CR+
+                   '       1 as Data_Type,'+@CR+
                    '       '''+@ReMark+''' as Remark'+@CR+
                    '  from '+@TB_RT_Data_tmp+' m'+@TB_Hint+@CR+
                    '       inner join '+@TB_RT_Data_tmp+' d'+@TB_Hint+@CR+
@@ -7833,6 +7783,8 @@ begin
                    ' where 1=1'+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, IsNull(sp_ctno, ''000000000'')+''-''+IsNull(sp_sales, '''+@NonSet+'''), IsNull(ct_sname, '''+@CNonSet+''')+''-''+IsNull(chg_sales_name, '''+@CNonSet+''')'+@CR+
                    'having Sum(chg_sp_stot_tax) <> 0  '
 
@@ -8150,6 +8102,8 @@ begin
                    '          and chg_sp_pdate_year >= ''2013'''+@CR+
                    '          and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '          and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '          and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    '        group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_bkind, chg_skno_bkind_name'+@CR+
                    '        union'+@CR+
                    '       select chg_sp_pdate_year as year,'+@CR+
@@ -8167,6 +8121,8 @@ begin
                    '          and chg_sp_pdate_year >= ''2013'''+@CR+
                    '          and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '          and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '          and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    '        group by chg_sp_pdate_year, chg_sp_pdate_month, Chg_sp_dis_flg, D2.Code_Name'+@CR+
                    ') as m'+@CR+
                    ' group by year, month, area, area_name, Not_Accumulate, Data_Type, Remark' 
@@ -8206,6 +8162,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_bkind, chg_skno_bkind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -8243,6 +8201,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_bkind, chg_skno_bkind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -8727,6 +8687,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_skind, chg_skno_skind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -8764,6 +8726,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_skind, chg_skno_skind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -8846,6 +8810,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_skind, chg_skno_skind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -8883,6 +8849,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_skind, chg_skno_skind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -8965,6 +8933,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_skind, chg_skno_skind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9002,6 +8972,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_skind, chg_skno_skind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9129,6 +9101,8 @@ begin
                    '           and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '           and chg_sp_pdate_year is not null'+@CR+
                    '           and (chg_skno_bkind = ''AA'' or Chg_sp_dis_flg = ''AA'') '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '           and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    --'         group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name, chg_skno_bkind'+@CR+
                    --'        union'+@CR+
                    --'        select chg_sp_pdate_year as area_year,'+@CR+
@@ -9186,6 +9160,8 @@ begin
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9224,6 +9200,8 @@ begin
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9351,6 +9329,8 @@ begin
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9433,6 +9413,8 @@ begin
                    '           and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '           and chg_sp_pdate_year is not null'+@CR+
                    '           and (chg_skno_bkind = ''AA'' or Chg_sp_dis_flg = ''AA'') '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '           and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    --'         group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname, chg_skno_bkind'+@CR+
                    --'        union'+@CR+
                    --'        select chg_sp_pdate_year as area_year,'+@CR+
@@ -9490,6 +9472,8 @@ begin
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9528,6 +9512,8 @@ begin
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9655,6 +9641,8 @@ begin
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9737,6 +9725,8 @@ begin
                    '           and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '           and chg_sp_pdate_year is not null'+@CR+
                    '           and (chg_skno_bkind = ''AB'' or Chg_sp_dis_flg = ''AB'') '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '           and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    --'         group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name, chg_skno_bkind'+@CR+
                    --'        union'+@CR+
                    --'        select chg_sp_pdate_year as area_year,'+@CR+
@@ -9793,6 +9783,8 @@ begin
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9831,6 +9823,8 @@ begin
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -9959,6 +9953,8 @@ begin
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10041,6 +10037,8 @@ begin
                    '           and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '           and chg_sp_pdate_year is not null'+@CR+
                    '           and (chg_skno_bkind = ''AB'' or Chg_sp_dis_flg = ''AB'') '+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '           and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    --'         group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname, chg_skno_bkind'+@CR+
                    --'        union'+@CR+
                    --'        select chg_sp_pdate_year as area_year,'+@CR+
@@ -10098,6 +10096,8 @@ begin
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10136,6 +10136,8 @@ begin
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10263,6 +10265,8 @@ begin
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10337,6 +10341,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10375,6 +10381,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10413,6 +10421,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10541,6 +10551,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10615,6 +10627,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10653,6 +10667,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10691,6 +10707,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10818,6 +10836,8 @@ begin
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10892,6 +10912,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
      if @Get_Result = @Err_Code Set @Result = @Err_Code
@@ -10929,6 +10951,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -10967,6 +10991,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11095,6 +11121,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+           
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11169,6 +11197,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11207,6 +11237,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11245,6 +11277,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11372,6 +11406,8 @@ begin
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11446,6 +11482,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11484,6 +11522,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11522,6 +11562,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11650,6 +11692,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11724,6 +11768,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11762,6 +11808,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11800,6 +11848,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11927,6 +11977,8 @@ begin
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -11965,6 +12017,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12003,6 +12057,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12041,6 +12097,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12079,6 +12137,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12117,6 +12177,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12155,6 +12217,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12193,6 +12257,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12320,6 +12386,8 @@ begin
                    '   and (chg_skno_bkind <> ''AA'' And chg_skno_bkind <> ''AB'' And chg_skno_bkind <> ''AC'' And chg_skno_bkind <> ''AD'' And chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sd_ctno, chg_ct_sname '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12362,6 +12430,8 @@ begin
                    '   and IsNull(chg_kind_name, '''') <> '''''+@CR+
                    '   and sk_kind <> ''Z'''+@CR+
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sk_kind, chg_kind_name, sp_sales, sp_sales_name '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12425,6 +12495,8 @@ begin
                    '   and IsNull(chg_kind_name, '''') <> '''''+@CR+
                    '   and sk_kind <> ''Z'''+@CR+
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sk_kind, chg_kind_name, sp_sales, sp_sales_name '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12488,6 +12560,8 @@ begin
                    '   and IsNull(chg_kind_name, '''') <> '''''+@CR+
                    '   and sk_kind <> ''Z'''+@CR+
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sk_kind, chg_kind_name, sp_sales, sp_sales_name '
                    
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12628,6 +12702,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_bkind, chg_skno_bkind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12665,6 +12741,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_bkind, chg_skno_bkind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -12702,6 +12780,8 @@ begin
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, chg_skno_bkind, chg_skno_bkind_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13119,6 +13199,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13156,6 +13238,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13196,6 +13280,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13234,6 +13320,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
                    '   and e_dept like ''B2%'''+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13271,6 +13359,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13311,6 +13401,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_sp_pdate_year >= ''2013'''+@CR+
                    '   and (sp_slip_fg =''2'' Or sp_slip_fg =''C'' Or sp_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13349,6 +13441,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13387,6 +13481,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13425,6 +13521,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AA'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13553,6 +13651,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13591,6 +13691,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13629,6 +13731,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AB'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13757,6 +13861,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13795,6 +13901,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13833,6 +13941,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AC'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13961,6 +14071,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -13999,6 +14111,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -14037,6 +14151,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AD'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -14165,6 +14281,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -14203,6 +14321,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -14241,6 +14361,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '   and chg_skno_bkind = ''AE'''+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -14370,6 +14492,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '        chg_skno_bkind <> ''AD'' and chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'' Or sd_slip_fg = ''3'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -14409,6 +14533,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '        chg_skno_bkind <> ''AD'' and chg_skno_bkind <> ''AE'')'+@CR+
                    '   and (sd_slip_fg =''2'' Or sd_slip_fg =''C'')'+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail
@@ -14448,6 +14574,8 @@ if (@Kind like @in_Kind+'%' Or @in_Kind ='' Or @in_Kind like '%'+@Kind+'%')
                    '        chg_skno_bkind <> ''AD'' and chg_skno_bkind <> ''AE'')'+@CR+
                    '   and sd_slip_fg =''3'''+@CR+
                    '   and chg_sp_pdate_year is not null'+@CR+
+                   -- 2017/08/08 Rickliu 副總指示客編 IT、ZZ 開頭不認列業績，雖不認列業績但應收扔得收
+                   '   and Chg_BU_NO Not In (''IT0000'', ''ZZ0000'') '+@CR+
                    ' group by chg_sp_pdate_year, chg_sp_pdate_month, sp_sales, chg_sales_name '
 
      Exec @Get_Result = uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL, @SendMail

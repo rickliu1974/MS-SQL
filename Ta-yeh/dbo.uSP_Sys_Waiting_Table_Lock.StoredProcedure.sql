@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Sys_Waiting_Table_Lock]    Script Date: 07/24/2017 14:44:00 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Sys_Waiting_Table_Lock]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_Sys_Waiting_Table_Lock]
 GO
 SET ANSI_NULLS ON

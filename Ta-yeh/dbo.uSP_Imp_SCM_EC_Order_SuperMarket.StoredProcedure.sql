@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_EC_Order_SuperMarket]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_EC_Order_SuperMarket]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_Imp_SCM_EC_Order_SuperMarket]
 GO
 SET ANSI_NULLS ON
@@ -198,7 +198,7 @@ PRINT 'F29:商品稅別      '
                   '       F11 as F5, '+@CR+  --商品名稱
                   '       replace(dbo.uFn_RegexReplace(''[^A-Z0-9]'', '''', F13,1,1),'' '','''') as F6, '+@CR+  --訂貨量  
                   '       F13 as F7, '+@CR+  --贈品否  
-                  '       case when PATINDEX(''%[0-9]%'',F16)>0 then Convert(Numeric(20, 6), F16) else 0 end as F8, '+@CR+  --紅利折抵金額  
+                  '       case when PATINDEX(''%[0-9]%'',F16)>0 then Convert(Numeric(20, 6), F15) else 0 end as F8, '+@CR+  --紅利折抵金額  
                   '       replace(dbo.uFn_RegexReplace(''[^A-Z.0-9]'', '''', F14,1,1),'' '','''') as F9, '+@CR+  --進價    
                   '       Convert(Varchar(100), '''') as F10, '+@CR+ --小計    
                   '       Convert(Varchar(100), '''') as F11, '+@CR+ --備註    

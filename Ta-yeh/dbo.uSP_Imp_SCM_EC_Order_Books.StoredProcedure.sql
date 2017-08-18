@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_EC_Order_Books]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_Imp_SCM_EC_Order_Books]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_Imp_SCM_EC_Order_Books]
 GO
 SET ANSI_NULLS ON
@@ -213,14 +213,14 @@ PRINT 'F21:上市日期'
                   '       Convert(Varchar(100), '''') as F12, '+@CR+ --採購單號    
                   '       '''+@Or_Date1+''' as F13,  '+@CR+ --指定到貨日       
                   '       xlsFileName as source_file,  '+@CR+ --轉入檔案名稱    
-                  '       replace(replace(replace(dbo.uFn_RegexReplace(''[^A-Z0-9]'', '''',F1,1,1),'' '',''''),'' '',''''),0x12,'''') as source_order, '+@CR+ --訂單編號
+                  '       replace(replace(replace(dbo.uFn_RegexReplace(''[^A-Z0-9]'', '''',F4,1,1),'' '',''''),'' '',''''),0x12,'''') as source_order, '+@CR+ --訂單編號
                   '       F8 as buyer, '+@CR+
                   '       F8 as cust, '+@CR+
-                  '       F10 as cust_phone, '+@CR+ 
-                  '       F11 as cust_mobile, '+@CR+ 
-                  '       F9 as cust_addr1, '+@CR+ 
-                  '       F9 as cust_addr2, '+@CR+ 
-                  '       F5 as MEMO,  '+@CR+ 
+                  '       F13 as cust_phone, '+@CR+ 
+                  '       F13 as cust_mobile, '+@CR+ 
+                  '       F14 as cust_addr1, '+@CR+ 
+                  '       F14 as cust_addr2, '+@CR+ 
+                  '       F17 as MEMO,  '+@CR+ 
                   '       print_date='''+@Or_Date1+''', '+@CR+
                   '       import_date=convert(datetime, getdate()) '+@CR+
                   '       into ['+@TB_tmp_Name+']'+@CR+

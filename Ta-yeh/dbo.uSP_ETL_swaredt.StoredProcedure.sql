@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_ETL_swaredt]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_ETL_swaredt]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_ETL_swaredt]
 GO
 SET ANSI_NULLS ON
@@ -141,7 +141,10 @@ begin
            and d.cal_ym = d1.wd_ym
            left join Fact_sstock d2
             on m.wd_skno = d2.sk_no
-     where wd_yr >= year(DateAdd(year, -5, getdate()))
+     where 1=1
+       -- 2017/08/08 Rickliu 從 2013 起算，保留近五年資料
+       and wd_yr >= '2013'
+       and wd_yr >= year(DateAdd(year, -5, getdate()))
     /*==============================================================*/
     /* Index: wdskno                                                */
     /*==============================================================*/

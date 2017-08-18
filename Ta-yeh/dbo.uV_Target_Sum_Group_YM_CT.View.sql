@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  View [dbo].[uV_Target_Sum_Group_YM_CT]    Script Date: 07/24/2017 14:43:55 ******/
+/****** Object:  View [dbo].[uV_Target_Sum_Group_YM_CT]    Script Date: 08/18/2017 17:18:53 ******/
 DROP VIEW [dbo].[uV_Target_Sum_Group_YM_CT]
 GO
 SET ANSI_NULLS ON

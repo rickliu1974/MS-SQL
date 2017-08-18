@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_ETL_sslip]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_ETL_sslip]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_ETL_sslip]
 GO
 SET ANSI_NULLS ON
@@ -291,7 +291,7 @@ begin
   員工基本資料區
  **********************************************************************************************************************************************************/
            [###pmploy###]='### pemploy ###',
-           D2.*,
+           D2.*, 
            sslip_update_datetime = getdate(),
            sslip_timestamp = m.timestamp_column
            into Fact_sslip
@@ -377,7 +377,10 @@ begin
             and DD_SLIP_FG = m.SP_SLIP_FG
             and DD_SPNO = m.SP_NO
             and DD_CTNO = m.SP_CTNO
-    where m.sp_date >= Convert(Varchar(5), year(DateAdd(year, -5, getdate())))+ '/01/01'
+    where 1=1
+      -- 2017/08/08 Rickliu 從 2013 年起算，保留近五年資料
+      and m.sp_date > '2013/01/01'
+      and m.sp_date >= Convert(Varchar(5), year(DateAdd(year, -5, getdate())))+ '/01/01'
     
     /*==============================================================*/
     /* Index: sslip_Timestamp                                      */

@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_ETL_PCust]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_ETL_PCust]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_ETL_PCust]
 GO
 SET ANSI_NULLS ON
@@ -57,15 +57,21 @@ begin
            Rtrim(M.[ct_no]) as ct_no, --編號
            Rtrim(M.[ct_name]) as ct_name, --名稱
            Rtrim(M.[ct_sname]) as ct_sname, --簡稱
-
+           -- 2017/08/07 Rickliu 只要是 IT業務個人、IZ現收客戶、ZZ其他客戶 一律都將編成 尾碼為 000001
            Case
-             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) Not in ('IT', 'IZ', 'ZZ')
-             then Substring(Rtrim(M.[ct_no]), 1, 8) 
-             else ''
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) in ('IT', 'IZ', 'ZZ')
+             then Substring(M.ct_no, 1, 2)+'000001'
+             else Substring(Rtrim(M.[ct_no]), 1, 8) 
            end as ct_no8, --客戶八碼編號(單一分店編號，六碼則為總公司編號)
            -- 20170428 Rickliu 原抓取 ct_sname 方式，仍會有錯誤情況，將改採抓取 ct_fld3+ct_fld4 方式呈現
            --LTrim(RTrim(Replace(Replace(Replace(Replace(Replace(Replace(m.ct_sname, '#', ''), '@', ''), '-', ''), 'T', ''), 'P', ''), '/', ''))) as ct_sname8, -- 客戶八碼名稱
-           rtrim(m.ct_fld3)+case when rtrim(m.ct_fld4) <> '' then '-' else '' end+rtrim(m.ct_fld4) as ct_sname8,
+           -- 2017/08/07 Rickliu 只要是 IT業務個人、IZ現收客戶、ZZ其他客戶 一律都歸單一名稱
+           Case
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) = 'IT' then '業務個人'
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) = 'IZ' then '現收客戶'
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) = 'ZZ' then '其他客戶'
+             else rtrim(m.ct_fld3)+case when rtrim(m.ct_fld4) <> '' then '-' else '' end+rtrim(m.ct_fld4) 
+           end as ct_sname8,
 
            [ct_addr1]=Rtrim(Convert(Varchar(255), M.ct_addr1)), --公司地址
            [ct_addr2]=Rtrim(Convert(Varchar(255), M.ct_addr2)), --發票地址
@@ -118,7 +124,14 @@ begin
            M.[ct_abroad], --國內.國外
            Rtrim(M.[ct_fld1]) as ct_fld1, --客戶|廠商附註一(客：開發日期、廠：配合起始日)
            Rtrim(M.[ct_fld2]) as ct_fld2, --客戶|廠商附註二(客：關店日期、廠：結束配合日)
-           Rtrim(M.[ct_fld3]) as ct_fld3, --客戶|廠商附註三(客：總公司別、廠：未使用)
+           -- 2017/08/07 Rickliu 只要是 IT業務個人、IZ現收客戶、ZZ其他客戶 一律都歸單一名稱
+           --Rtrim(M.[ct_fld3]) as ct_fld3, --客戶|廠商附註三(客：總公司別、廠：未使用)
+           Case
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) = 'IT' then '業務個人'
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) = 'IZ' then '現收客戶'
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 8 and Substring(M.ct_no, 1, 2) = 'ZZ' then '其他客戶'
+             else rtrim(m.ct_fld3)
+           end as ct_fld3,
            Rtrim(M.[ct_fld4]) as ct_fld4, --客戶|廠商附註四(客：分店別、廠：廠商評比)
            Rtrim(M.[ct_fld5]) as ct_fld5, --客戶|廠商附註五(客：客服專用1、廠：簽約到期日)
            Rtrim(M.[ct_fld6]) as ct_fld6, --客戶|廠商附註六(客：客服專用2、廠：未使用)
@@ -146,8 +159,10 @@ begin
            -- 客戶
            --2016/09/09 Rickliu 因組織擴編，增加機車通路，因此將原本 2~5 改為 2~6
            Case
-             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 6 and Substring(M.ct_no, 1, 2) Not in ('IT', 'IZ', 'ZZ')
-             then Substring(Rtrim(M.[ct_no]), 1, 6) 
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 6 and Substring(M.ct_no, 1, 2) = 'IT' then 'IT0000'
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 6 and Substring(M.ct_no, 1, 2) = 'IZ' then 'IZ0000'
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 6 and Substring(M.ct_no, 1, 2) = 'ZZ' then 'ZZ0000'
+             when m.ct_class = '1' and Len(Rtrim(M.[ct_no])) > 6 then Substring(Rtrim(M.[ct_no]), 1, 6) 
              else ''
            end as Chg_BU_NO, -- 客戶總公司編號
            --2017/06/21 Rickliu 因百大客戶需過濾總公司客編，因此新增此欄位
@@ -239,7 +254,8 @@ begin
              when m.ct_class = '1' and Substring(RTrim(m.ct_no), 9, 1) = '4' then 'F'
              else ''
            end as Chg_Cust_Dis_Mapping,
-           
+           -- 2017/08/04 Rickliu 新增 廠商採購員或客戶業務 是否離職
+           case when (Convert(Varchar(4), D2.e_ldate, 112) = '1900') then 'N' else 'Y' end as ct_sale_leave,
            pcust_update_datetime = getdate(),
            pcust_timestamp = m.timestamp_column
            into Fact_pcust

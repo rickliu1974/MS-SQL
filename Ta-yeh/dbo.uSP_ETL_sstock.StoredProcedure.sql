@@ -1,6 +1,6 @@
 USE [DW]
 GO
-/****** Object:  StoredProcedure [dbo].[uSP_ETL_sstock]    Script Date: 07/24/2017 14:43:59 ******/
+/****** Object:  StoredProcedure [dbo].[uSP_ETL_sstock]    Script Date: 08/18/2017 17:18:56 ******/
 DROP PROCEDURE [dbo].[uSP_ETL_sstock]
 GO
 SET ANSI_NULLS ON
@@ -33,11 +33,37 @@ begin
      Exec uSP_Sys_Exec_SQL @Proc, @Msg, @strSQL
   end
 
-
   begin try
     set @Msg = 'ETL SStock to [Fact_sstock]...'
     Exec uSP_Sys_Write_Log @Proc, @Msg, @Msg, 0
 
+    -- 2017/08/02 Rickliu 滯銷品 SubQuery
+    ;With CTE_Q1 as (
+      -- 抓取下架商品且計算下架半年後的起迄日期
+      select Rtrim(sk_no) as sk_no, Rtrim(sk_name) as sk_name, 
+             convert(datetime, sk_color+'01') as Dead_BDate, 
+             dateadd(day, -1, dateadd(month, +6, convert(datetime, sk_color+'01'))) as Dead_EDate
+        from sync_ta13.dbo.sstock m
+       where 1=1
+         and isdate(sk_color+'01') = 1
+    ), CTE_Q2 as (
+      -- 抓取單據為 sd_class = ('[0-3]', '6', '8')且單據日期落於 CTE_Q1 的起迄日期
+      -- 若有資料則代表下架後之半年內仍有交易，不列為滯銷品
+      select Rtrim(sd_skno) as sd_skno, Rtrim(sd_name) as sd_name, 
+             Dead_BDate, Dead_EDate, max(sd_date) as sd_date
+        from sync_ta13.dbo.sslpdt m
+             left join CTE_Q1 d
+               on m.sd_skno = d.sk_no
+       where 1=1
+         and sd_class in ('[0-3]', '6', '8')
+         and sd_date between d.Dead_BDate and d.Dead_EDate
+       group by sd_skno, sd_name, Dead_BDate, Dead_EDate
+    --  having max(sd_date) > bdate
+    ), CTE_Q3 as (
+      select distinct sk_no
+        from Ori_xls#Master_Stock
+    )
+    
     select distinct 
            Rtrim(M.[sk_no]) as sk_no, 
            Rtrim(M.[sk_bcode]) as sk_bcode, 
@@ -164,11 +190,12 @@ begin
            Chg_updat2_Year = DATEPART(yy, M.s_updat2),
            Chg_updat2_Month = DATEPART(mm, M.s_updat2),
            -- 2014/06/07 未銷商品註記
-           Chg_Stock_NonSales = 
-             Case 
-               when D7.sk_no is Not null Then 'Y'
-               else 'N'
-             End,
+           -- 2017/08/07 Rickliu 取消使用商品未銷列表
+           --Chg_Stock_NonSales = 
+           --  Case 
+           --    when D7.sk_no is Not null Then 'Y'
+           --    else 'N'
+           --  End,
            -- 2014/06/17 Rick 新增 AA 期初安全存量
            --Chg_WD_AA_first_sQty = Isnull(D8.wd_first_sqty, 0),
            Chg_WD_AA_sQty = Isnull(D8.wd_sqty, 0),
@@ -218,20 +245,27 @@ begin
            Chg_WD_AG_last_diff_Qty = Isnull(D11.wd_last_qty_diff, 0),
 
            -- 2014/06/16 Rickliu 新增滯銷品
-           Chg_IS_Dead_Stock = 
-             Case
-               when D12.sk_no is not null then 'Y'
-               else 'N'
-             end,
+           Chg_IS_Dead_Stock = Case when D12.sk_no is not null then 'Y' else 'N' end,
+           -- 2017/08/02 Rickliu 修訂滯銷品定義，改為以下架日後之半年內無任何交易者(sd_class in ('[0-3]', '6', '8'))
+           --Chg_IS_Dead_Stock = 
+           --  Case
+           --    when D15.sd_skno is null then 'N'
+           --    else 'Y'
+           --  end,
+
            Chg_Dead_First_Qty = Round(isnull(D12.First_Qty, 0), 0),
            Chg_Dead_First_Amt = Round(isnull(D12.First_Amt, 0), 0),
            Chg_Dead_Stock_YM = Convert(Varchar(7), Isnull(D12.Dead_YM, ''), 111),
            
+           -- 2017/08/01 Rickliu 修訂新品定義，改為以一年內之引進之產品為新品
+           Chg_IS_New_Stock = Case when Convert(DateTime, D13.Arrival_Date) >= dateadd(year, -1, getdate()) then 'Y' else 'N' end,
            -- 2014/07/02 Rickliu 新增採購新品資訊
+           Chg_New_sm_no = rtrim(D13.sm_no),
            Chg_New_Arrival_Date = Convert(DateTime, D13.Arrival_Date),
            Chg_New_Arrival_YM = Convert(Varchar(7), Convert(DateTime, D13.Arrival_Date), 111),
            Chg_New_First_Qty = Round(isnull(D13.First_Qty, 0), 0),
-
+           -- 2017/08/01 Rickliu 重新定義主銷，取消原本在單據明細內判別是否為主銷
+           Chg_IS_Master_Stock = case when rtrim(m.sk_no) = rtrim(D16.sk_no) collate Chinese_Taiwan_Stroke_CI_AS then 'Y' else 'N' end,
 		   -- 2015/05/15 Nanliao 新增產品屬性表資訊
 		                            
 		   Chg_color            = D14.color           ,
@@ -250,6 +284,9 @@ begin
 		   Chg_product_property = D14.product_property,
 		   Chg_gross_property   = D14.gross_property  ,
 
+           case when rtrim(m.sk_no) = rtrim(D16.sk_no) collate Chinese_Taiwan_Stroke_CI_AS then '[主]' else '' end+
+           Case when Convert(DateTime, D13.Arrival_Date) >= dateadd(year, -1, getdate()) then '[新]' else '' end+
+           Case when D12.sk_no is not null then '[滯]' else '' end as stock_kind_list,
            sstock_update_datetime = getdate(),
            sstock_Timestamp = m.Timestamp_Column
            into Fact_sstock
@@ -266,8 +303,9 @@ begin
                   ON D5.kd_class='2' AND M.sk_ivkd = D5.kd_no 
            left join SYNC_TA13.dbo.pcust as D6 With(NoLock) 
                   ON D6.ct_class='2' AND M.s_supp = D6.ct_no
-           left join Ori_xls#Stock_NonSales as D7 With(NoLock) 
-                  ON M.sk_no Collate Chinese_Taiwan_Stroke_CI_AS = D7.sk_no Collate Chinese_Taiwan_Stroke_CI_AS
+           -- 2017/08/07 Rickliu 取消使用商品未銷列表
+           --left join Ori_xls#Stock_NonSales as D7 With(NoLock) 
+           --       ON M.sk_no Collate Chinese_Taiwan_Stroke_CI_AS = D7.sk_no Collate Chinese_Taiwan_Stroke_CI_AS
            left join SYNC_TA13.dbo.V_Last_Swaredt as D8 With(NoLock) 
                   On M.sk_no = D8.sk_no
                  And D8.Wd_no ='AA'
@@ -287,6 +325,10 @@ begin
 		   -- 2015/05/15 Nanliao 新增產品屬性表資訊
            left join Ori_xls#Stock_Property as D14 With(NoLock) 
                   on M.sk_no Collate Chinese_Taiwan_Stroke_CI_AS = D14.sk_no Collate Chinese_Taiwan_Stroke_CI_AS and D14.kind = 'P'
+           left join CTE_Q2 as D15 on m.sk_no = D15.sd_skno
+           -- 2017/08/07 Rickliu 重新修訂主銷列表
+           left join CTE_Q3 as D16 on m.sk_no = D16.sk_no collate Chinese_Taiwan_Stroke_CI_AS
+           
 
     /*==============================================================*/
     /* Index: sstock_Timestamp                                      */
